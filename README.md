@@ -1,12 +1,17 @@
-# EcoSort — Commit 01
+# EcoSort
 
-Commit message: `chore: initialise`
+EcoSort is a  mobile application that helps users check local recycling guidance, save a privacy-aware scan history, and demonstrate core mobile development features.
 
-This version is intentionally small but fully runnable. It establishes  Expo app shell, brand direction, design tokens, and reusable metric card component.
-
-Run:
+## Run
 
 ```bash
 npm install
 npm start
 ```
+
+## Android
+
+```bash
+npm run android
+```
+

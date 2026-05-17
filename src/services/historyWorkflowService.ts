@@ -1,0 +1,2 @@
+import { CouncilRule, ScanHistoryEntry, SearchSource } from '../types';
+export function createHistoryEntry(rule: CouncilRule, source: SearchSource, privacyMode: boolean): ScanHistoryEntry { return { id: `${rule.id}-${Date.now()}`, item: rule.item, ruleId: rule.id, council: rule.council, binLabel: rule.binLabel, source, timestamp: new Date().toISOString(), points: rule.points, co2EstimateKg: rule.co2EstimateKg, storedData: privacyMode ? 'metadata only' : 'metadata only' }; }
