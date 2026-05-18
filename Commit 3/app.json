@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "EcoSort",
+    "slug": "ecosort",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "scheme": "ecosort",
+    "splash": {
+      "backgroundColor": "#F7F4ED",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.ecosort.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F4ED"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
