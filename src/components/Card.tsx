@@ -7,6 +7,22 @@ export function Card({ children, style, muted = false }: { children: ReactNode; 
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: theme.colors.surface, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.lg, ...theme.shadow.card },
-  muted: { backgroundColor: theme.colors.surfaceMuted, shadowOpacity: 0, elevation: 0 },
+  card: {
+    backgroundColor: theme.colors.surfaceRaised,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)', // Subtle hairline border
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 4,
+  },
+  muted: {
+    backgroundColor: theme.colors.canvasSoft,
+    borderColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
 });

@@ -1,47 +1,274 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Screen } from '../components/Screen';
 import { Card } from '../components/Card';
 import { AppButton } from '../components/AppButton';
 import { ScanHistoryEntry } from '../types';
+import { COUNCIL_RULES } from '../data/councilRules';
 import { theme } from '../theme/theme';
+import { useSettings } from '../utils/settingsContext';
+import { scaleTextStyle } from '../utils/scaledStyles';
 
-export function HistoryScreen({ history, onClear }: { history: ScanHistoryEntry[]; onClear: () => void }) {
+// ── helpers ────────────────────────────────────────────────────────────────────
+
+function getConfidence(ruleId: string): number | null {
+  const rule = COUNCIL_RULES.find((r) => r.id === ruleId);
+  return rule ? rule.confidence : null;
+}
+
+function sourceLabel(source: ScanHistoryEntry['source']): string {
+  if (source === 'camera') return 'Camera scan';
+  if (source === 'location' || source === 'location-demo') return 'Location';
+  return 'Manual search';
+}
+
+// ── Detail modal ───────────────────────────────────────────────────────────────
+
+function DetailModal({
+  entry,
+  onClose,
+}: {
+  entry: ScanHistoryEntry;
+  onClose: () => void;
+}) {
+  const confidence = getConfidence(entry.ruleId);
+  const { textScale } = useSettings();
+
   return (
-    <Screen title="History" subtitle="A lightweight local record of your recent recycling checks.">
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={modal.backdrop} />
+      </TouchableWithoutFeedback>
+
+      <View style={modal.sheet}>
+        {/* drag handle */}
+        <View style={modal.handle} />
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={modal.content}>
+          {/* header */}
+          <View style={modal.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={scaleTextStyle(modal.itemTitle, textScale)}>{entry.item}</Text>
+              <Text style={scaleTextStyle(modal.binLabel, textScale)}>{entry.binLabel}</Text>
+            </View>
+            <Text style={scaleTextStyle(modal.points, textScale)}>+{entry.points} pts</Text>
+          </View>
+
+          <View style={modal.divider} />
+
+          {/* detail rows */}
+          <DetailRow textScale={textScale} label="Council" value={entry.council} />
+          <DetailRow textScale={textScale} label="Source" value={sourceLabel(entry.source)} />
+          <DetailRow
+            textScale={textScale}
+            label="Timestamp"
+            value={new Date(entry.timestamp).toLocaleString()}
+          />
+          {confidence !== null && (
+            <DetailRow
+              textScale={textScale}
+              label="Confidence"
+              value={`${Math.round(confidence * 100)}%`}
+              valueColor={
+                confidence >= 0.9
+                  ? theme.colors.success
+                  : confidence >= 0.75
+                  ? theme.colors.warning
+                  : theme.colors.danger
+              }
+            />
+          )}
+          <DetailRow textScale={textScale} label="CO₂ estimate" value={`${entry.co2EstimateKg} kg`} />
+
+          <View style={modal.divider} />
+
+          {/* privacy note */}
+          <Text style={scaleTextStyle(modal.privacyLabel, textScale)}>Privacy note</Text>
+          <Text style={scaleTextStyle(modal.privacyText, textScale)}>{entry.storedData}</Text>
+        </ScrollView>
+
+        <AppButton title="Close" variant="ghost" onPress={onClose} style={modal.closeBtn} />
+      </View>
+    </Modal>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  valueColor,
+  textScale,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+  textScale: number;
+}) {
+  return (
+    <View style={modal.row}>
+      <Text style={scaleTextStyle(modal.rowLabel, textScale)}>{label}</Text>
+      <Text style={[scaleTextStyle(modal.rowValue, textScale), valueColor ? { color: valueColor } : null]}>{value}</Text>
+    </View>
+  );
+}
+
+// ── Main screen ────────────────────────────────────────────────────────────────
+
+export function HistoryScreen({
+  history,
+  onClear,
+}: {
+  history: ScanHistoryEntry[];
+  onClear: () => void;
+}) {
+  const { textScale } = useSettings();
+  const [selected, setSelected] = useState<ScanHistoryEntry | null>(null);
+
+  return (
+    <Screen
+      title="History"
+      subtitle="Tap any record to see full details. Photo files and exact location details stay out of your saved history."
+    >
       {history.length === 0 ? (
         <Card muted>
-          <Text style={styles.emptyTitle}>No saved checks yet</Text>
-          <Text style={styles.emptyText}>Search or scan an item, then save the result to build your EcoSort history.</Text>
+          <Text style={scaleTextStyle(styles.emptyTitle, textScale)}>No saved checks yet</Text>
+          <Text style={scaleTextStyle(styles.emptyText, textScale)}>
+            Search or scan an item, then save the result to build your EcoSort history.
+          </Text>
         </Card>
       ) : (
         <>
           {history.map((entry) => (
-            <Card key={entry.id} style={styles.item}>
-              <View style={styles.row}>
-                <Text style={styles.itemTitle}>{entry.item}</Text>
-                <Text style={styles.points}>+{entry.points}</Text>
-              </View>
-              <Text style={styles.bin}>{entry.binLabel}</Text>
-              <Text style={styles.meta}>{entry.council} · {new Date(entry.timestamp).toLocaleString()}</Text>
-              <Text style={styles.privacy}>{entry.storedData}</Text>
-            </Card>
+            <Pressable
+              key={entry.id}
+              onPress={() => setSelected(entry)}
+              accessibilityRole="button"
+              accessibilityHint="Tap to view full details"
+              style={({ pressed }) => [pressed && styles.pressed]}
+            >
+              <Card style={styles.item}>
+                <View style={styles.row}>
+                  <View style={styles.dot} />
+                  <View style={styles.itemText}>
+                    <Text style={scaleTextStyle(styles.itemTitle, textScale)}>{entry.item}</Text>
+                    <Text style={scaleTextStyle(styles.bin, textScale)}>{entry.binLabel}</Text>
+                  </View>
+                  <View style={styles.rightCol}>
+                    <Text style={scaleTextStyle(styles.points, textScale)}>+{entry.points}</Text>
+                    <Text style={scaleTextStyle(styles.chevron, textScale)}>›</Text>
+                  </View>
+                </View>
+                <Text style={scaleTextStyle(styles.meta, textScale)}>
+                  {entry.council} · {new Date(entry.timestamp).toLocaleString()}
+                </Text>
+                <Text style={scaleTextStyle(styles.privacy, textScale)}>{entry.storedData}</Text>
+              </Card>
+            </Pressable>
           ))}
           <AppButton title="Clear history" variant="ghost" onPress={onClear} />
         </>
       )}
+
+      {selected ? (
+        <DetailModal entry={selected} onClose={() => setSelected(null)} />
+      ) : null}
     </Screen>
   );
 }
 
+// ── Styles ─────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   emptyTitle: { ...theme.typography.h2, color: theme.colors.text, marginBottom: 6 },
   emptyText: { ...theme.typography.body, color: theme.colors.textMuted },
-  item: { gap: 6 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  itemTitle: { ...theme.typography.h2, color: theme.colors.text, textTransform: 'capitalize' },
-  points: { color: theme.colors.success, fontWeight: '900', backgroundColor: '#E4F4EA', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
-  bin: { fontSize: 15, fontWeight: '800', color: theme.colors.primaryDark },
+  item: { gap: 9 },
+  pressed: { opacity: 0.78, transform: [{ scale: 0.988 }] },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  dot: { width: 10, height: 10, borderRadius: 10, backgroundColor: theme.colors.primary },
+  itemText: { flex: 1 },
+  itemTitle: { ...theme.typography.h3, color: theme.colors.text, textTransform: 'capitalize' },
+  points: {
+    color: theme.colors.success,
+    fontWeight: '800',
+    backgroundColor: theme.colors.primaryTint,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: theme.radius.pill,
+    overflow: 'hidden',
+  },
+  rightCol: { alignItems: 'flex-end', gap: 4 },
+  chevron: { fontSize: 18, color: theme.colors.textSubtle, fontWeight: '300' },
+  bin: { ...theme.typography.small, color: theme.colors.primaryDark, marginTop: 2 },
   meta: { ...theme.typography.small, color: theme.colors.textMuted },
-  privacy: { ...theme.typography.small, color: theme.colors.textSubtle, marginTop: 5 },
+  privacy: { ...theme.typography.caption, color: theme.colors.textSubtle },
+});
+
+const modal = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(18, 33, 29, 0.45)',
+  },
+  sheet: {
+    backgroundColor: theme.colors.canvas,
+    borderTopLeftRadius: theme.radius.xl,
+    borderTopRightRadius: theme.radius.xl,
+    paddingHorizontal: 24,
+    paddingBottom: 36,
+    maxHeight: '78%',
+    ...theme.shadow.card,
+  },
+  handle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: theme.colors.borderStrong,
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  content: { paddingTop: 12, paddingBottom: 8, gap: 2 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 16,
+  },
+  itemTitle: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '800',
+    color: theme.colors.text,
+    textTransform: 'capitalize',
+    letterSpacing: -0.2,
+  },
+  binLabel: { ...theme.typography.body, color: theme.colors.primaryDark, marginTop: 4 },
+  points: {
+    ...theme.typography.h3,
+    color: theme.colors.success,
+    backgroundColor: theme.colors.primaryTint,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: theme.radius.pill,
+    overflow: 'hidden',
+  },
+  divider: { height: 1, backgroundColor: theme.colors.border, marginVertical: 14 },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.hairline,
+  },
+  rowLabel: { ...theme.typography.small, color: theme.colors.textSubtle, fontWeight: '600' },
+  rowValue: { ...theme.typography.small, color: theme.colors.text, fontWeight: '700', maxWidth: '60%', textAlign: 'right' },
+  privacyLabel: {
+    ...theme.typography.label,
+    color: theme.colors.textSubtle,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  privacyText: { ...theme.typography.small, color: theme.colors.textMuted, lineHeight: 20 },
+  closeBtn: { marginTop: 16 },
 });

@@ -1,5 +1,5 @@
 export type AppScreen = 'home' | 'search' | 'scan' | 'history' | 'settings' | 'onboarding' | 'location' | 'device' | 'account';
-export type SearchSource = 'manual' | 'camera' | 'location-demo';
+export type SearchSource = 'manual' | 'camera' | 'location' | 'location-demo';
 
 export interface CouncilRule {
   id: string;
@@ -13,6 +13,14 @@ export interface CouncilRule {
   risk: string;
   points: number;
   co2EstimateKg: number;
+  /** Optional product-like metadata used by the UI. Kept optional so tests and existing callers remain stable. */
+  acceptedIn?: string[];
+  rejectedIn?: string[];
+  disposalType?: 'kerbside' | 'drop-off' | 'special' | 'compost' | 'general';
+  sourceName?: string;
+  lastReviewedAt?: string;
+  barcodeHints?: string[];
+  barcodeValues?: string[];
 }
 
 export interface ScanHistoryEntry {
@@ -42,4 +50,6 @@ export interface AuthSession {
   email: string;
   idToken: string;
   localId: string;
+  /** 'local' sessions unlock product features without requiring Firebase .env setup. */
+  mode?: 'firebase' | 'local';
 }

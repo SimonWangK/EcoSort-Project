@@ -1,6 +1,8 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 import { theme } from '../theme/theme';
+import { useSettings } from '../utils/settingsContext';
+import { scaleTextStyle } from '../utils/scaledStyles';
 
 interface AppButtonProps {
   title: string;
@@ -15,29 +17,40 @@ interface AppButtonProps {
 
 export function AppButton({ title, onPress, variant = 'primary', disabled, loading, style, accessibilityLabel, accessibilityHint }: AppButtonProps) {
   const isDisabled = disabled || loading;
+  const { textScale } = useSettings();
+  const textStyle = scaleTextStyle(styles.text, textScale);
+  const textSecondaryStyle = scaleTextStyle(styles.textSecondary, textScale);
+
   return (
-    <TouchableOpacity
-      activeOpacity={0.86}
+    <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || title}
       accessibilityHint={accessibilityHint}
       disabled={isDisabled}
       onPress={onPress}
-      style={[styles.base, styles[variant], isDisabled && styles.disabled, style]}
+      style={({ pressed }) => [styles.base, styles[variant], pressed && !isDisabled && styles.pressed, isDisabled && styles.disabled, style]}
     >
       {loading ? <ActivityIndicator color={variant === 'primary' ? theme.colors.white : theme.colors.primary} /> : (
-        <Text style={[styles.text, variant !== 'primary' && styles.textSecondary]}>{title}</Text>
+        <Text style={[textStyle, variant !== 'primary' && textSecondaryStyle]}>{title}</Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  base: { minHeight: 52, borderRadius: theme.radius.md, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
-  primary: { backgroundColor: theme.colors.primary },
-  secondary: { backgroundColor: theme.colors.primarySoft, borderWidth: 1, borderColor: '#C9DED2' },
-  ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.border },
-  disabled: { opacity: 0.55 },
-  text: { color: theme.colors.white, fontSize: 16, fontWeight: '800' },
+  base: {
+    minHeight: 54,
+    borderRadius: theme.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    borderWidth: 1,
+  },
+  primary: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  secondary: { backgroundColor: theme.colors.primaryTint, borderColor: '#D7E3DA' },
+  ghost: { backgroundColor: 'transparent', borderColor: theme.colors.borderStrong },
+  pressed: { transform: [{ scale: 0.985 }], opacity: 0.92 },
+  disabled: { opacity: 0.48 },
+  text: { color: theme.colors.white, fontSize: 15, fontWeight: '800', letterSpacing: -0.05 },
   textSecondary: { color: theme.colors.primaryDark },
 });

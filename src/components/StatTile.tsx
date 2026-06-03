@@ -1,20 +1,55 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { theme } from '../theme/theme';
+import { useSettings } from '../utils/settingsContext';
+import { scaleTextStyle } from '../utils/scaledStyles';
 
 export function StatTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  const { textScale } = useSettings();
   return (
     <View style={styles.tile}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
-      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+      <Text style={scaleTextStyle(styles.label, textScale)}>{label}</Text>
+      <Text style={scaleTextStyle(styles.value, textScale)} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+      {hint && <Text style={scaleTextStyle(styles.hint, textScale)}>{hint}</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  tile: { flex: 1, backgroundColor: theme.colors.surface, borderRadius: 22, borderWidth: 1, borderColor: theme.colors.border, padding: 16, minHeight: 112 },
-  label: { ...theme.typography.label, color: theme.colors.textSubtle, textTransform: 'uppercase' },
-  value: { fontSize: 26, lineHeight: 32, color: theme.colors.text, fontWeight: '900', marginTop: 10 },
-  hint: { ...theme.typography.small, color: theme.colors.textMuted, marginTop: 6 },
+  tile: { 
+    flex: 1, 
+    backgroundColor: theme.colors.surfaceRaised, 
+    borderRadius: 20, 
+    borderWidth: 1, 
+    borderColor: 'rgba(0, 0, 0, 0.04)', 
+    padding: 16, 
+    minHeight: 112, 
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  label: { 
+    ...theme.typography.label, 
+    color: theme.colors.textSubtle, 
+    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+  },
+  value: { 
+    fontSize: 28, 
+    lineHeight: 34, 
+    color: theme.colors.text, 
+    fontWeight: '800', 
+    letterSpacing: -0.5,
+    marginVertical: 4,
+  },
+  hint: { 
+    ...theme.typography.caption, 
+    color: theme.colors.textMuted,
+    fontSize: 12,
+  },
 });
